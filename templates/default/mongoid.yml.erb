@@ -1,0 +1,15 @@
+<%= @rails_env  %>:
+  sessions:
+    default:
+      hosts:
+      <% @hosts.each do |host, ip| %>
+        <%= "- #{host}:#{@mongo_port}" unless ip.nil? || ip == "DO_NOT_USE" %>
+      <% end %>
+      database: <%= @project_name %>_<%= @rails_env %>
+      options:
+        read: <%= @read_option %>
+        max_retries: <%= @max_retries %>       # Default 30
+        retry_interval: <%= @retry_interval %> # Default 30
+        write:
+          w: 2
+#        timeout: ?

@@ -1,0 +1,36 @@
+#################################################################
+############################ DO NOT EDIT ########################
+######################## CONTROLLED BY CHEF #####################
+#################################################################
+
+Eye.application "<%= @service_name %>" do
+  env "RAILS_ENV" => '<%= @rails_env %>'
+  env "PATH" => "#{File.dirname("<%= @ruby %>")}:#{ENV['PATH']}"
+
+  working_dir "<%= @app_current_dir %>"
+
+  process("<%= @process_name %>") do
+    pid_file "<%= @app_shared_dir %>/pids/unicorn.pid"
+    start_command "bundle exec unicorn_rails -D -E <%= @rails_env %> -c <%= @app_shared_dir %>/config/unicorn.rb"
+    stdall "<%= @app_shared_dir %>/log/unicorn.log"
+
+    stop_signals [:KILL]
+#    stop_signals [:QUIT, 2.seconds, :TERM, 5.seconds, :KILL]
+
+    restart_command "kill -USR2 {PID}"
+
+    start_timeout 30.seconds
+    restart_grace 30.seconds
+
+    check :cpu, :every => 30, :below => 80, :times => 3
+    check :memory, :every => 30, :below => 900.megabytes, :times => [3,5]
+#    check :http, url: 'http://127.0.0.1/hello', pattern: /name or email/,
+#                 every: 5.seconds, times: [2, 3], timeout: 30.second
+
+    monitor_children do
+      stop_command "kill -QUIT {PID}"
+      check :cpu, :every => 30, :below => 80, :times => 3
+      check :memory, :every => 30, :below => 900.megabytes, :times => [3,5]
+    end
+  end
+end

@@ -1,0 +1,39 @@
+#################################################################
+############################ DO NOT EDIT ########################
+######################## CONTROLLED BY CHEF #####################
+#################################################################
+
+upstream app_server {
+    server unix:/tmp/.sock fail_timeout=0;
+  }
+
+server {
+  listen         80;
+  server_name    *.<%= node[:fqdn] %>;
+#    rewrite        ^ http://<%= node[:fqdn] %>$request_uri? permanent;
+
+  client_max_body_size 4G;
+  root <%= @home_dir %>/deploy/current/public;
+
+<% unless @rails_env == "development" %>
+  location ^~ /assets/ {
+    gzip_static on;
+    expires max;
+    add_header Cache-Control public;
+  }
+<% end %>
+
+  try_files $uri/index.html $uri.html $uri @app;
+  location @app {
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Host $http_host;
+    proxy_redirect off;
+    proxy_pass http://app_server;
+  }
+
+  error_page 500 502 503 504 /500.html;
+  location = /500.html {
+    root <%= @home_dir %>/deploy/current/public;
+  }
+}

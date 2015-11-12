@@ -1,0 +1,82 @@
+---
+driver:
+  name: lxd_cli
+#  image_name: "kitchen-base-ubuntu-1404"
+#  config: "limits.memory=2G"
+  config:
+    limits.memory: 1G
+    limits.cpus: 2
+#    boot.autostart: true
+#  profile: "migratable"
+#  profile: [ "default", "migratable" ]
+#  domain_name: lxc
+  verifier_path: "/opt/verifier"
+#  publish_image_before_destroy: true
+#  publish_image_name: "kitchen-base-ubuntu-1404"
+  use_publish_image: true
+  ip_gateway: 10.0.3.1
+#  never_destroy: true
+  lxd_proxy_install: true
+#  lxd_proxy_destroy: true
+#  enable_wait_for_ssh_login: true
+#  mount:
+#    rails_mongodb_app:
+#      local_path: "<%= ENV['HOME'] %>/rails_projects/myapp"
+#      container_path: "/mnt/rails_mongodb_app"
+
+provisioner:
+  name: chef_zero
+  http_proxy: http://10.0.3.5:8123
+  https_proxy: https://10.0.3.5:8123
+  chef_omnibus_url: http://www.chef.io/chef/install.sh
+  nodes_path: ".nodes"
+  require_chef_omnibus: 12.5.1
+
+platforms:
+- name: ubuntu-14.04
+
+suites:
+- name: base
+  driver_config:
+    publish_image_before_destroy: true
+#    publish_image_overwrite: true
+    ipv4: 10.0.3.254/24
+  run_list:
+  - recipe[rails_mongodb_app::_base]
+- name: db1
+  driver_config:
+    ipv4: 10.0.3.11/24
+  run_list:
+  - recipe[rails_mongodb_app::shard1]
+- name: db2
+  driver_config:
+    ipv4: 10.0.3.12/24
+  run_list:
+  - recipe[rails_mongodb_app::shard1]
+- name: db3
+  driver_config:
+    ipv4: 10.0.3.21/24
+  run_list:
+  - recipe[rails_mongodb_app::shard2]
+- name: db4
+  driver_config:
+    ipv4: 10.0.3.22/24
+  run_list:
+  - recipe[rails_mongodb_app::shard2]
+- name: config
+  driver_config:
+    ipv4: 10.0.3.31/24
+  run_list:
+  - recipe[rails_mongodb_app::config_server]
+- name: mongos
+  driver_config:
+    ipv4: 10.0.3.41/24
+  run_list:
+  - recipe[rails_mongodb_app::mongos]
+#- name: web1
+#  driver_config:
+#    ipv4: 10.0.3.51/24
+#  run_list:
+#  - recipe[rails_mongodb_app::web_app]
+#  attributes:
+

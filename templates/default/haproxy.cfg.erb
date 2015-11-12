@@ -1,0 +1,49 @@
+global
+  log 127.0.0.1   local0
+  log 127.0.0.1   local1 notice
+  maxconn 4096
+  user haproxy
+  group haproxy
+  tune.ssl.default-dh-param 2048
+  ca-base /etc/ssl
+  crt-base /etc/ssl
+
+defaults
+  log     global
+  mode    http
+  retries 3
+  timeout client 50s
+  timeout connect 5s
+  timeout server 50s
+  option dontlognull
+  option httplog
+  option redispatch
+  option forwardfor
+  option http-server-close
+  balance  roundrobin
+
+listen admin
+  bind 0.0.0.0:8080
+  mode http
+  stats uri /stats
+
+frontend localhost
+  bind :80
+  reqadd X-Forwarded-Proto:\ http
+  default_backend rails-app
+
+  bind :443 ssl crt snakeoil.pem
+  reqadd X-Forwarded-Proto:\ https
+  default_backend rails-app
+
+backend rails-app
+  acl ua_smartphone hdr_reg(User-Agent) -i iphone ipod android bada
+  redirect scheme https if  !{ ssl_fc } !{ path_beg /files/track/mp3/ }
+  redirect scheme https if !{ ssl_fc } { path_beg /files/track/mp3/ } !ua_smartphone
+  redirect scheme http if { ssl_fc } { path_beg /files/track/mp3/ } ua_smartphone
+  timeout check 60s
+  option httpchk GET /login
+  balance leastconn
+<% node[:rails_mongodb_app][:rails_app_servers].sort.each do |host, ip| %>
+  <%= "server #{host.gsub(".#{node[:domain]}","")} #{ip}:80 maxconn 5 check inter 500ms" unless ip.nil? || ip == "DO_NOT_USE" %>
+<% end %>
