@@ -38,7 +38,7 @@ platforms:
 suites:
 - name: base
   driver_config:
-    publish_image_before_destroy: true
+#    publish_image_before_destroy: true
 #    publish_image_overwrite: true
     ipv4: 10.0.3.254/24
   run_list:

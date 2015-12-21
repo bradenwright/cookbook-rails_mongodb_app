@@ -17,6 +17,7 @@ Eye.application "<%= @service_name %>" do
     stop_signals [:KILL]
 #    stop_signals [:QUIT, 2.seconds, :TERM, 5.seconds, :KILL]
 
+#    restart_command "kill -USR2 {PID} && kill -WINCH {PID} && kill -QUIT {PID}"
     restart_command "kill -USR2 {PID}"
 
     start_timeout 30.seconds
@@ -24,8 +25,8 @@ Eye.application "<%= @service_name %>" do
 
     check :cpu, :every => 30, :below => 80, :times => 3
     check :memory, :every => 30, :below => 900.megabytes, :times => [3,5]
-#    check :http, url: 'http://127.0.0.1/hello', pattern: /name or email/,
-#                 every: 5.seconds, times: [2, 3], timeout: 30.second
+    check :http, url: 'http://localhost/login', pattern: /.*<title>Music Player<\/title>.*/,
+                 every: 30.seconds, times: [4, 5], timeout: 30.second
 
     monitor_children do
       stop_command "kill -QUIT {PID}"
